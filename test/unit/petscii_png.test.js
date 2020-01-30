@@ -36,13 +36,14 @@ describe('PETSCII png maker', () => {
 
    it('Can turn an array of codes into a jimp image', () => {
 
-    const sprite_sheet_src = 'commodore-8-bit/petscii/1.PNG'
-    const codes = [7,12,200,1,4,5];
+    const sprite_sheet_src = 'commodore-8-bit/petscii/1.png'
+    const codes = Array.from(Array(255).keys());
+    // const codes = Array(3).fill(120);
     var p_png = new PetsciiPng(sprite_sheet_src);
     expect.assertions(2);
     return p_png.load_sprite_sheet().then(() => {
       expect(p_png.sprite_sheet).toBeInstanceOf(Jimp);
-      return p_png.char_mosaic(codes, 3).then(
+      return p_png.char_mosaic(codes, 16).then(
         function(val) {
           expect(val).toBeInstanceOf(Jimp);
           console.log(val);

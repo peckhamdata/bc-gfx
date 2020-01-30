@@ -5,16 +5,45 @@
 start:
 
 .var screen = $8000
+.var content = $8029
+// Border
 
-// Display the two sides - with thanks to George Phillips
-// http://48k.ca/wgascii.html
-
-ldx #$00
-ldy #$00
 
         lda #<screen
         sta $02
         lda #>screen
+        sta $03
+        lda #$a0
+        ldy #$00
+!loop:  sta ($02),y
+        iny
+        cpy #$12
+        bne !loop-
+        ldx #$00
+!loop:  ldy #$00
+        sta ($02),y
+        ldy #$11
+        sta ($02),y
+        pha
+        lda $02
+        clc
+        adc #$28
+        sta $02
+        bcc !next+
+        inc $03
+!next:  pla
+        inx
+        cpx #$12
+        bne !loop-
+
+// Charset
+
+        ldx #$00
+        ldy #$00
+
+        lda #<content
+        sta $02
+        lda #>content
         sta $03
         ldx #$00
         lda #$00
@@ -35,6 +64,14 @@ ldy #$00
         inx
         cpx #$10
         bne !l2-
+
+        lda #$a0
+        ldy #$00
+!loop:  sta ($02),y
+        iny
+        cpy #$12
+        bne !loop-
+
         rts
 
                 // lda #$00

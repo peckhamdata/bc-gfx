@@ -4,9 +4,13 @@ module.exports = class PetsciiPng {
   constructor(sprite_sheet_src) {
     this.sprite_sheet_src = sprite_sheet_src;
     this.sprite_sheet;
+
     this.sheet_width = 16;
-    this.char_width = 32;
-    this.char_height = 32;
+    this.char_width = 22;
+    this.visible_width = 22;
+
+    this.char_height = 22;
+    this.visible_height = 22;
   }
 
   load_sprite_sheet() {
@@ -47,37 +51,39 @@ module.exports = class PetsciiPng {
     var char_height = this.char_height;
     var char_width = this.char_width;
     var sheet_width = this.sheet_width;
+    var visible_width = this.visible_width;
+    var visible_height = this.visible_height;
+    var height = Math.floor(codes.length / width);
 
     return new Promise(
        (resolve, reject) => {
           // Create the blank image to start with
-          new Jimp(width * char_width, 256, 0xff0000ff, (err, image) => {
-                  console.log('Create the blank image to start with');
+          new Jimp(width * visible_width, 
+                   height * visible_height, 
+                   0xff0000ff, 
+                   (err, image) => {
                   resolve(image);
                 })
     }).then(
       function(base_image) {
         // Now populate it with images that relate to the codes  
-        console.log('now populate');
 
         var promises = codes.map(promise_me);
 
         function promise_me(value, index, array) {
           return new Promise(function(resolve, reject) {
-            console.log(index, (index % width))
-            base_image.blit(sprite_sheet,
-                            (index % width) * char_width,
-                            (Math.floor(index/width)) * char_width,
-                            (value % sheet_width) * char_width,
-                            (Math.floor(value/sheet_width)) * char_height,
-                            char_width,
-                            char_height)
+            base_image.blit(sprite_sheet, 
+                           (index % width) * visible_width,
+                           (Math.floor(index/width)) * visible_height,
+                           (value % sheet_width) * char_width,
+                           (Math.floor(value/sheet_width)) * char_height,
+                           visible_width,
+                           visible_height)
             resolve(value);
           });
         }
 
         Promise.all(promises).then(function(values) {
-          console.log(values);
           base_image.write('fool.png');
         })
         .catch(error => { 

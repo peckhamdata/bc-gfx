@@ -1,4 +1,4 @@
 # bc-gfx
 
-Bézier City Graphics Sources, Tools and Pipelines
+Bézier City graphics - assets, pipelines, tools
 
