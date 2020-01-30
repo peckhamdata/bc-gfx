@@ -2,6 +2,7 @@
 *.asm
 *.prg
 *.sym
+
 # Logs
 logs
 *.log

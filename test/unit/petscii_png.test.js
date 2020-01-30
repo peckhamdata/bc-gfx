@@ -27,6 +27,31 @@ describe('PETSCII png maker', () => {
       });
     });
   });
+
+/////////////////////////////////////////////////////////
+
+// Given an array of char codes
+// And a width
+// It creates an image based on these
+
+   it('Can turn an array of codes into a jimp image', () => {
+
+    const sprite_sheet_src = 'commodore-8-bit/petscii/1.PNG'
+    const codes = [7,12,200,1,4,5];
+    var p_png = new PetsciiPng(sprite_sheet_src);
+    expect.assertions(2);
+    return p_png.load_sprite_sheet().then(() => {
+      expect(p_png.sprite_sheet).toBeInstanceOf(Jimp);
+      return p_png.char_mosaic(codes, 3).then(
+        function(val) {
+          expect(val).toBeInstanceOf(Jimp);
+          console.log(val);
+        }).catch(
+       (reason) => {
+          console.log('Handle rejected promise (' + reason + ':here.');
+      });
+    });
+  });
 });
 
 /////////////////////////////////////////////////////////
