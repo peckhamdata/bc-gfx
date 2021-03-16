@@ -55,16 +55,4 @@ describe('PETSCII png maker', () => {
   });
 });
 
-/////////////////////////////////////////////////////////
 
-// Given a PETMATE export
-
-// And a X,Y,H,W co-ordinates for part of it
-
-// And a Sprite Sheet
-
-// When we process the PETMATE export
-
-// Then we should get a PNG of the bit we're interested in
-
-/////////////////////////////////////////////////////////
