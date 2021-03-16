@@ -6,21 +6,27 @@ module.exports = class PetsciiPng {
     this.sprite_sheet;
 
     this.sheet_width = 16;
-    this.char_width = 22;
-    this.visible_width = 22;
+    this.char_width = 30;
+    this.visible_width = 30;
 
-    this.char_height = 22;
-    this.visible_height = 22;
+    this.char_height = 30;
+    this.visible_height = 30;
   }
 
   load_sprite_sheet() {
     return new Promise(
-        // The executor function is called with the ability to resolve or
-        // reject the promise
        (resolve, reject) => {
           Jimp.read(this.sprite_sheet_src, (err, image) => {
-            this.sprite_sheet = image;
-            resolve(image);
+            if (err !== null) {
+              reject(err);
+            } else {
+              if (image !== null) {
+                this.sprite_sheet = image;
+                resolve(image);
+              } else {
+                reject(err);
+              }
+           }
         });
       }
     );    
@@ -47,13 +53,14 @@ module.exports = class PetsciiPng {
     // Q. What is the proper way to get vars from the 
     // class when you are deep into a local function 
     // and can't use this?
+    width = width + 1;
     var sprite_sheet = this.sprite_sheet;
     var char_height = this.char_height;
     var char_width = this.char_width;
     var sheet_width = this.sheet_width;
     var visible_width = this.visible_width;
     var visible_height = this.visible_height;
-    var height = Math.floor(codes.length / width);
+    var height = Math.floor(codes.length / width );
 
     return new Promise(
        (resolve, reject) => {
@@ -72,9 +79,9 @@ module.exports = class PetsciiPng {
 
         function promise_me(value, index, array) {
           return new Promise(function(resolve, reject) {
-            base_image.blit(sprite_sheet, 
+            base_image.blit(sprite_sheet,
                            (index % width) * visible_width,
-                           (Math.floor(index/width)) * visible_height,
+                           (Math.floor(index/width )) * visible_height,
                            (value % sheet_width) * char_width,
                            (Math.floor(value/sheet_width)) * char_height,
                            visible_width,

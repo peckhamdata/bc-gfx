@@ -43,7 +43,7 @@ describe('PETSCII png maker', () => {
     expect.assertions(2);
     return p_png.load_sprite_sheet().then(() => {
       expect(p_png.sprite_sheet).toBeInstanceOf(Jimp);
-      return p_png.char_mosaic(codes, 16).then(
+      return p_png.char_mosaic(codes, 15).then(
         function(val) {
           expect(val).toBeInstanceOf(Jimp);
           console.log(val);
