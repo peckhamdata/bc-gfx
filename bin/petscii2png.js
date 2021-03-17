@@ -24,8 +24,10 @@ var BUFFER = bufferFile(options.petscii);
 
 const petmate_export = (JSON.parse(BUFFER.toString()))
 const co_ords = {x: options.x, y: options.y, h: options.h, w: options.w}
+console.log(co_ords)
 codes = new PetmateExport(petmate_export).extract_chars(co_ords)
 
+console.log(codes)
 const p_png = new PetsciiPng(path.join(__dirname, options.spritesheet));
 
 p_png.load_sprite_sheet().then(() => {
@@ -35,11 +37,11 @@ p_png.load_sprite_sheet().then(() => {
     await val.writeAsync(`out.png`);
   }).catch(
   (reason) => {
-    console.log('Fail (' + reason + ':here.');
+    console.log('A Fail:' + reason + ':here.');
   })
 
 }).catch((error) => {
-  console.log(error)
+  console.log('B Fail:' + error)
 })
 
 function bufferFile(relPath) {

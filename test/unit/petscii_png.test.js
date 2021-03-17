@@ -20,7 +20,7 @@ describe('PETSCII png maker', () => {
       return p_png.char_image(code).then(        
         function(val) {
           expect(val).toBeInstanceOf(Jimp);
-          console.log(val);
+          // console.log(val);
         }).catch(
        (reason) => {
           console.log('Handle rejected promise (' + reason + ':here.');
@@ -46,7 +46,7 @@ describe('PETSCII png maker', () => {
       return p_png.char_mosaic(codes, 15).then(
         function(val) {
           expect(val).toBeInstanceOf(Jimp);
-          console.log(val);
+          // console.log(val);
         }).catch(
        (reason) => {
           console.log('Handle rejected promise (' + reason + ':here.');

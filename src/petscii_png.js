@@ -6,11 +6,11 @@ module.exports = class PetsciiPng {
     this.sprite_sheet;
 
     this.sheet_width = 16;
-    this.char_width = 30;
-    this.visible_width = 30;
+    this.char_width = 8;
+    this.visible_width = 8;
 
-    this.char_height = 30;
-    this.visible_height = 30;
+    this.char_height = 8;
+    this.visible_height = 8;
   }
 
   load_sprite_sheet() {
@@ -61,7 +61,7 @@ module.exports = class PetsciiPng {
     var visible_width = this.visible_width;
     var visible_height = this.visible_height;
     var height = Math.floor(codes.length / width );
-
+    // console.log(codes)
     return new Promise(
        (resolve, reject) => {
           // Create the blank image to start with
@@ -77,24 +77,32 @@ module.exports = class PetsciiPng {
 
         var promises = codes.map(promise_me);
 
-        function promise_me(value, index, array) {
+        function promise_me(code, index, array) {
           return new Promise(function(resolve, reject) {
+            var quotient = Math.floor(code /sheet_width);
+            var remainder = code % sheet_width;
+            var source_x = 0;
+            if (remainder > 0) {
+              source_x = (remainder * char_width);
+            }
+            var source_y = quotient * char_height;
+            console.log(code, quotient, remainder, source_y, source_x)
             base_image.blit(sprite_sheet,
                            (index % width) * visible_width,
                            (Math.floor(index/width )) * visible_height,
-                           (value % sheet_width) * char_width,
-                           (Math.floor(value/sheet_width)) * char_height,
+                           source_x,
+                           source_y,
                            visible_width,
                            visible_height)
-            resolve(value);
+            resolve(code);
           });
         }
 
-        Promise.all(promises).then(function(values) {
-          base_image.write('fool.png');
+        Promise.all(promises).then(function(code) {
+          console.log('Finished:' + code);
         })
         .catch(error => { 
-          console.error(error.message)
+          console.error('Fail:', error)
         });
 
         return base_image
