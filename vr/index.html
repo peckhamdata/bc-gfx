@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>three dee citee</title>
+        <style>
+            html, body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            #renderCanvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+        </style>
+        <script src="https://cdn.babylonjs.com/babylon.js"></script>
+        <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+        <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
+    </head>
+   <body>
+    <canvas id="renderCanvas" touch-action="none"></canvas> <!-- touch-action="none" for best results from PEP -->
+    <script>
+
+var createScene = async function () {
+    // This creates a basic Babylon Scene object (non-mesh)
+    var scene = new BABYLON.Scene(engine);
+    scene.clearColor = new BABYLON.Color3(0, 0, 0);
+    // This creates and positions a free camera (non-mesh)
+    var camera = new BABYLON.UniversalCamera("camera1", new BABYLON.Vector3(-10, 2.3, -5), scene);
+    // This targets the camera to scene origin
+    camera.setTarget(BABYLON.Vector3.Zero());
+
+    // This attaches the camera to the canvas
+    camera.attachControl(true);
+
+    // // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+    var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+
+    var mat = new BABYLON.StandardMaterial("mat", scene);
+    var texture = new BABYLON.Texture("https://storage.googleapis.com/chrisyoung-io/assets/img/building_net_1_b.png", scene);
+    mat.diffuseTexture = texture;
+    mat.freeze();
+
+    var mat2 = new BABYLON.StandardMaterial("mat2", scene);
+    var texture2 = new BABYLON.Texture("https://storage.googleapis.com/chrisyoung-io-apex/vr/sky-2012.png", scene);
+    mat2.diffuseTexture = texture2;
+
+    const box = BABYLON.MeshBuilder.CreateBox("box",
+    {height: 3, width: 1, depth: 1,
+    faceUV:[new BABYLON.Vector4(.25, 1, 0, .29), // reverse side
+            new BABYLON.Vector4(.0, .29, .25, 1), // side
+            new BABYLON.Vector4(.2, .2, .2, .2), // ???
+            new BABYLON.Vector4(1, 1, .275, .75),   // A side
+            new BABYLON.Vector4(0, 0, .2, .2),  // top
+            new BABYLON.Vector4(1, .2, 0, 0)]});
+    box.material = mat;
+    box.position = new BABYLON.Vector3(2, 1.5, 0);
+    scene.blockMaterialDirtyMechanism = true;
+
+    var ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 5000, height: 5000}, scene);
+    var backgroundMaterial = new BABYLON.BackgroundMaterial("backgroundMaterial", scene);
+    backgroundMaterial.useRGBColor = false;
+    backgroundMaterial.primaryColor = BABYLON.Color3.Green()
+    backgroundMaterial.shadowLevel = 0.4;
+    ground.receiveShadows = true;
+    ground.material = backgroundMaterial
+
+	//Array of paths to construct tube
+	const myPath = [
+		 	new BABYLON.Vector3(0, -10, 0),
+			new BABYLON.Vector3(0, 5000, 0)
+	];
+
+    //Create ribbon with updatable parameter set to true for later changes
+	let tube = BABYLON.MeshBuilder.CreateTube("tube", {path: myPath, radius: 5000, sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: true}, scene);
+    tube.material = mat2;
+
+    var mat3 = new BABYLON.StandardMaterial("mat3", scene);
+    var texture3 = new BABYLON.Texture("https://storage.googleapis.com/chrisyoung-io-apex/vr/bg.png", scene);
+    texture3.hasAlpha = true;
+    mat3.diffuseTexture = texture3;
+    mat3.useAlphaFromDiffuseTexture = true;
+	let tube2 = BABYLON.MeshBuilder.CreateTube("tube", {path: myPath, radius: 4000, sideOrientation: BABYLON.Mesh.DOUBLESIDE, updatable: true}, scene);
+    tube2.material = mat3;
+
+    //Set gravity for the scene (G force like, on Y-axis)
+    scene.gravity = new BABYLON.Vector3(0, -0.9, 0);
+
+    // Enable Collisions
+    scene.collisionsEnabled = true;
+
+    //Then apply collisions and gravity to the active camera
+    camera.checkCollisions = true;
+    camera.applyGravity = true;
+
+    //Set the ellipsoid around the camera (e.g. your player's size)
+    camera.ellipsoid = new BABYLON.Vector3(1, 1, 1);
+
+    //finally, say which mesh will be collisionable
+    ground.checkCollisions = true;
+
+    const env = scene.createDefaultEnvironment();
+
+    // here we add XR support
+    const xr = await scene.createDefaultXRExperienceAsync({
+        floorMeshes: [ground],
+    });
+
+
+    return scene;
+
+};
+
+const canvas = document.getElementById("renderCanvas"); // Get the canvas element
+const engine = new BABYLON.Engine(canvas, false, null, false); // Generate the BABYLON 3D engine
+// Add your code here matching the playground format
+createScene().then(function(scene) {
+
+    function ready(task) {
+
+      var myMaterial = new BABYLON.StandardMaterial("myMaterial", scene);
+      // myMaterial.diffuseColor = new BABYLON.Color3(1, 0, 1);
+      // myMaterial.specularColor = new BABYLON.Color3(0.5, 0.6, 0.87);
+      myMaterial.emissiveColor = new BABYLON.Color3(0, 0, 0);
+      // myMaterial.ambientColor = new BABYLON.Color3(0.23, 0.98, 0.53);
+
+      var myMesh = task.loadedMeshes[0];
+      console.log(myMesh);
+      myMesh.position = new BABYLON.Vector3(1, 0, 1);
+      myMesh.material = myMaterial;
+    }
+
+    function not_ready(task, message, exception) {
+          console.log(message, exception);
+    }
+
+    var assetsManager = new BABYLON.AssetsManager(scene);
+    var meshTask = assetsManager.addMeshTask("sheep", "", "assets/meshes/", "sheep_1.obj");
+    meshTask.onSuccess = ready;
+    meshTask.onError = not_ready;
+    assetsManager.load();
+
+// Register a render loop to repeatedly render the scene
+    engine.runRenderLoop(function () {
+            scene.render();
+    });
+    // Watch for browser/canvas resize events
+    window.addEventListener("resize", function () {
+            engine.resize();
+
+
+    });
+
+}); //Call the createScene function
+
+var zoom = 0;
+
+    </script>
+   </body>
+</html>
+
+
+
+
