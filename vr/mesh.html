@@ -1,0 +1,362 @@
+    <!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <title>Babylon.js sample code</title>
+
+        <!-- Babylon.js -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+        <script src="https://preview.babylonjs.com/ammo.js"></script>
+        <script src="https://preview.babylonjs.com/cannon.js"></script>
+        <script src="https://preview.babylonjs.com/Oimo.js"></script>
+        <script src="https://preview.babylonjs.com/earcut.min.js"></script>
+        <script src="https://preview.babylonjs.com/babylon.js"></script>
+        <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+        <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+        <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+        <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+        <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+        <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+        <style>
+            html, body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            #renderCanvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+        </style>
+    </head>
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
+        var url = "https://rawgit.com/Pryme8/Das_Noise/gh-pages/js/dN.1.2.21.js";
+        var s = document.createElement("script");
+        s.src = url;
+        document.head.appendChild(s);
+
+
+        TERI = function(args, scene){
+            this.scene = scene;
+            this._init(args);
+        return this
+        };
+        
+        TERI.prototype = {
+            _init : function(args){
+                this.noiseStack = args.noiseStack || [];
+                this.zoneSize = args.zoneSize || 100;
+                this.zoneDetail = args.zoneDetail || 80;
+                this.lodMax = args.lodMax || 4;
+                this.minDistance = args.minDistance || 40;
+                this.distanceMultiplier = args.distanceMultiplier || 2;
+                this.ringSize = args.ringSize || 10;
+                this.zones = {};
+                this._setActiveCamera();
+                this._checkLocation(this._getCoordID());
+            },
+            _setActiveCamera : function(){this.activeCamera = this.scene.activeCamera},
+            _getCameraPosition : function(){return this.activeCamera.position.clone()},
+            _getCoordID : function(){
+                var pos = this._getCameraPosition();
+                return {x: Math.floor(pos.x/this.zoneSize) , y: Math.floor(pos.z/this.zoneSize)}
+            },
+            _coord2Pos : function(id){
+                return new BABYLON.Vector3(id.x*this.zoneSize, 0 , id.y*this.zoneSize);
+            },
+            _checkLocation : function(loc){
+                // console.log(`_checkLocation: ${loc.x}:${loc.y}`);
+                var lID = loc.x+":"+loc.y;
+                if(this._spawnTest(loc)){
+                        if(!this.zones[lID]){
+                            return this._spawnTerrain(loc);
+                        }else{
+                            return this.zones[lID];
+                        }
+                }   
+                return false;   
+            },
+            _spawnTest : function(loc){
+                var p1 = this.activeCamera.position.clone();
+                var p2 = this._coord2Pos(loc);
+                var dx = p1.x - p2.x;
+                var dy = p1.y - p2.y;
+                var dz = p1.z - p2.z;
+                var distance = Math.sqrt(dx * dx + dy * dy + dz *dz);
+                var _d = this.minDistance*Math.pow(2 , this.lodMax);
+                if(_d > distance){return true}else{return false};
+            },
+            _spawnTerrain : function(loc){
+                // console.log(`SPAWNING @ ${loc.x}:${loc.y}`);
+                var lID = loc.x+":"+loc.y;
+                var terrain = new TERI.ZONE(loc, this);
+                this.zones[lID] = terrain;
+               return this.zones[lID];
+            },
+            _ringTest : function(loc){
+                var p1 = this._getCoordID();
+                var p2 = loc;
+                var dx = p1.x - p2.x;
+                var dy = p1.y - p2.y;
+                var distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
+                if(distance <= this.ringSize){return true}
+                return false;
+            },
+            _destroyZone : function(loc){
+                var id = loc.x+":"+loc.y;
+                var meshes = this.zones[id].meshes;
+                    for(var i = 0; i < meshes.length; i++){
+                        var m = meshes[i];
+                        if(m){m.dispose()};
+                    }
+                    delete this.zones[id];
+            }
+        };
+        
+        TERI.ZONE = function(loc, parent){
+        this.parent = parent;
+        this.loc = loc;
+        this.position = parent._coord2Pos(loc);
+        this.meshes = new Array(parent.lodMax);
+        this.neighborLOD = {N:0,E:0,S:0,W:0};
+        this._init();
+        return this;
+        };
+        
+        TERI.ZONE.prototype = {
+            _init : function(){    
+                this.level = this._getLOD();
+                //this._checkLOD();
+                this._buildLOD(this.level);
+            },
+            _getDistance : function(){
+                var p1 = this.parent.activeCamera.position.clone();
+                var p2 = this.position.clone();
+                var dx = p1.x - p2.x;
+                var dy = p1.y - p2.y;
+                var dz = p1.z - p2.z;
+                return (Math.sqrt(dx * dx + dy * dy + dz *dz))-(this.parent.zoneSize*0.65);
+            },
+            _getLOD : function(){
+                if(!this.parent._ringTest(this.loc)){
+                        this.parent._destroyZone(this.loc);
+                    return -1;
+                }
+                var distance = this._getDistance();
+                for(var i = 0; i < this.parent.lodMax; i++){
+                    var _d = this.parent.minDistance*Math.pow(this.parent.distanceMultiplier , i+1);
+                        if(distance < _d){
+                            return i;      
+                        }
+                }
+                return -1;
+            },
+            _checkLOD : function(level){
+                if(typeof level == 'undefined'){
+                    level = this.level;
+                }
+                var mesh = this.meshes[level];
+                if(!mesh){return false}else{return true};
+            },
+            _buildLOD : function(level){
+               // console.log(`building at position:${this.position}`);
+                var mesh = new TERI.MESH(level, {}, this);
+                mesh.position = this.position.clone();
+                this.meshes[level] = mesh;
+            },
+            _preRenderTest : function(){
+                var cLOD = this._getLOD();
+                // console.log("Zones Current LOD:"+cLOD);
+                if(cLOD == -1){
+                    //DESTROY ZONE!
+        
+                }
+                else if(this.level != cLOD){
+                    if(this._checkLOD(cLOD)){
+                        //MESH EXSISTS ACTIVATE IT
+                        // console.log('MESH EXSITS ACTIVE IT!');
+                        this._changeLevel(cLOD);
+                    }else{
+                        //MESH NEEDS TO BE BUILT
+                        // console.log('MESH NEEDS TO BE BUILT!');
+                        this._buildLOD(cLOD);
+                        this._changeLevel(cLOD);
+                    }
+                }
+                this._neighborSpawnCheck();
+        
+            },
+            _changeLevel : function(level){
+                this.meshes[this.level].setEnabled(false);
+                this.meshes[level].setEnabled(true);
+                this.level = level;
+            },
+            _neighborSpawnCheck : function(){
+                var cArr = 
+                [[-1,-1], [-1,-0], [-1,1],
+                [0,-1],  [0,1],
+                [1,-1], [1,-0], [1,1]];
+        
+                var tempN = {N:0,E:0,S:0,W:0};
+        
+        
+                for(var i =0; i<cArr.length; i++){
+                    var c = cArr[i];
+                    var tID = {x:this.loc.x+c[0], y:this.loc.y+c[1]};
+        
+                if(!this.parent._ringTest(tID)){
+                        continue;
+                }
+                var check = this.parent._checkLocation(tID);
+        
+                if(check){
+                if(i==1){
+                        if(check.level > this.level){
+                            tempN.W = 1;
+                        }
+                }else if(i == 3){
+                        if(check.level > this.level){
+                            tempN.S = 1;
+                        }
+                }else if(i == 4){
+                       if(check.level > this.level){
+                            tempN.N = 1;
+                        }
+        
+                }else if(i == 6){
+                        if(check.level > this.level){
+                            tempN.E = 1;
+                        }
+                }    
+                } 
+                
+                }
+        
+                if(
+                    tempN.N != this.neighborLOD.N ||
+                    tempN.W != this.neighborLOD.W ||
+                    tempN.E != this.neighborLOD.E ||
+                    tempN.S != this.neighborLOD.S 
+                    ){
+                        this._rebuildLevel(tempN);
+                    };
+            },
+            _rebuildLevel : function(n){
+                // console.log("Rebuilding!");
+                // console.log(this.loc," -> ", n );
+                this.neighborLOD = n;
+                this.meshes[this.level].dispose();
+                var mesh = new TERI.MESH(this.level, n, this);
+                mesh.position = this.position.clone();
+                this.meshes[this.level] = mesh;
+            }
+        };
+        
+        
+        TERI.MESH = function(level, nDat, parent){
+            console.log(`${parent.loc.x}:${parent.loc.y}`);
+            var core = parent.parent;
+            var size = core.zoneSize;
+            var detail = core.zoneDetail/(Math.pow(core.distanceMultiplier, level));
+            if(detail<1){detail = 1};
+            detail = Math.floor(detail*2);
+            mesh = BABYLON.MeshBuilder.CreateBox("tPlane", {height:1, width: size, depth:size});
+
+            var material = new BABYLON.StandardMaterial("material");
+            material.diffuseTexture = new BABYLON.Texture(
+                "tile060.png",
+                scene
+            );
+
+            material.diffuseTexture.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
+            material.diffuseTexture.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
+            material.specularColor = new BABYLON.Color4(0, 0, 0, 0);
+            material.backFaceCulling = false;
+            mesh.material = material;
+
+            return mesh;
+        };
+        
+        
+        var createScene = function () {
+            var scene = new BABYLON.Scene(engine);
+            var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 550, 0), scene);
+            camera.setTarget(BABYLON.Vector3.Zero());
+            camera.attachControl(canvas, true);
+            var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+            light.intensity = 0.7;
+        
+            var delayFix = function(){
+                if(typeof dN != 'undefined'){
+                var noise = undefined;
+
+                World = new TERI({zoneDetail:1, noiseStack:noise, lodMax: 10}, scene);
+
+                // scene.forceWireframe = true;
+
+                scene.registerBeforeRender(function(){
+                    var zones = World.zones;
+                    var zArr = Object.keys(zones);
+                    for(var i=0; i < zArr.length; i++){
+                            var zone = zones[zArr[i]];
+                            zone._preRenderTest();
+                        }
+                    });
+
+                    } else {
+                        setTimeout(function(){delayFix();},1000);
+                    }
+                }
+        
+            delayFix();
+            
+        
+        
+            return scene;
+        
+        };
+                var engine;
+                var scene;
+                initFunction = async function() {               
+                    var asyncEngineCreation = async function() {
+                        try {
+                        return createDefaultEngine();
+                        } catch(e) {
+                        console.log("the available createEngine function failed. Creating the default engine instead");
+                        return createDefaultEngine();
+                        }
+                    }
+
+                    engine = await asyncEngineCreation();
+        if (!engine) throw 'engine should not be null.';
+        scene = createScene();};
+        initFunction().then(() => {sceneToRender = scene        
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>
