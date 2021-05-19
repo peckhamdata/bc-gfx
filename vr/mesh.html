@@ -65,7 +65,7 @@
                 this.lodMax = args.lodMax || 4;
                 this.minDistance = args.minDistance || 40;
                 this.distanceMultiplier = args.distanceMultiplier || 2;
-                this.ringSize = args.ringSize || 10;
+                this.ringSize = args.ringSize || 20;
                 this.zones = {};
                 this._setActiveCamera();
                 this._checkLocation(this._getCoordID());
@@ -278,8 +278,32 @@
             mesh = BABYLON.MeshBuilder.CreateBox("tPlane", {height:1, width: size, depth:size});
 
             var material = new BABYLON.StandardMaterial("material");
+
+            // width of city == 16 * 16 * 16 == 4096
+            const x_offset = (4 * 256) + (2 * 16) + 1;
+            const x_pos = x_offset + parent.loc.x;
+            const y_offset = (5 * 256) + (7 * 16) + 9;
+            const y_pos = y_offset + parent.loc.y;
+
+            // https://stackoverflow.com/a/9744576/1064619
+            function paddy(num, padlen, padchar) {
+                var pad_char = typeof padchar !== 'undefined' ? padchar : '0';
+                var pad = new Array(1 + padlen).join(pad_char);
+                return (pad + num).slice(-pad.length);
+            }
+
+            const x_top = paddy(Math.floor(x_pos / 256), 2);
+            const x_mid = paddy(Math.floor((x_pos % 256) / 16), 2);
+            const x_low = paddy((x_pos % 256) % 16, 2);
+
+            const y_top = paddy(Math.floor(y_pos / 256), 2);
+            const y_mid = paddy(Math.floor((y_pos % 256) / 16), 2);
+            const y_low = paddy((y_pos % 256) % 16, 2);
+            const floor_root = 'https://chrisyoung.io/3d/city/ground'
+            const texture_file = `${floor_root}/${y_top}_${x_top}/${y_mid}_${x_mid}/${y_low}_${x_low}.png`;
+            console.log(texture_file);
             material.diffuseTexture = new BABYLON.Texture(
-                "tile060.png",
+                texture_file,
                 scene
             );
 
