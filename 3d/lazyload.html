@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -33,6 +33,19 @@
     <script>
 
 var createScene = async function (zones) {
+    var loaded = Array(420);
+    for (var i=0; i< loaded.length; i++) {
+      loaded[i] = Array(420)
+    }
+
+    var lines = Array(420);
+    for (var i=0; i< lines.length; i++) {
+      lines[i] = Array(420)
+      for (var j=0; j< lines[i].length; j++) {
+        lines[i][j] = []
+      }
+    }
+
     // This creates a basic Babylon Scene object (non-mesh)
     var scene = new BABYLON.Scene(engine);
     scene.clearColor = new BABYLON.Color3(0, 0, 0);
@@ -40,7 +53,7 @@ var createScene = async function (zones) {
     var camera = new BABYLON.UniversalCamera("camera1", new BABYLON.Vector3(-10, 2.3, -5), scene);
     // This targets the camera to scene origin
     camera.setTarget(BABYLON.Vector3.Zero());
-    camera.speed = 100
+    camera.speed = 2
     camera.maxZ = 100000;
     // This attaches the camera to the canvas
     camera.attachControl(true);
@@ -111,79 +124,71 @@ var createScene = async function (zones) {
 
     scene.registerBeforeRender(function(scene) {
 
-        // Find out where we are
-        const pos = scene.activeCamera.position.clone();
-        // City gird is broken down into squares (zones)
-        const zone_size = 6400;
-        const mid_point = 6;
-        const offset = 34000; // MAGIC NUMBER !!!
-        // We want to know which zone (square on the city gird) we are
-        // console.log(pos.x, pos.z)
-        const x_pos = Math.floor(pos.x / zone_size) + mid_point;
-        const z_pos = Math.floor(pos.z / zone_size) + mid_point;
+      // Find out where we are
+      const pos = scene.activeCamera.position.clone();
+      // City gird is broken down into squares (zones)
+      const zone_size = 200;
+      const mid_point = 6;
+      const x_offset = 203;
+      const z_offset = 221;
+      // We want to know which zone (square on the city gird) we are
+      const x_pos = (Math.floor(pos.x / zone_size) + mid_point) + x_offset;
+      const z_pos = (Math.floor(pos.z / zone_size) + mid_point) + z_offset;
 
-        let x_start, y_start, x_control, y_control, x_end, y_end;
+      const x_magic = 52100;
+      const y_magic = 56600;
 
-        if ((x_pos != x_prev) || (z_pos != z_prev)) {
-            console.log(x_pos, z_pos)
-            try {
-                // Look up what is nearby that we should now show
-                if ((zones[x_pos][z_pos] === null) || (zones[x_pos][z_pos] === undefined)) {
-                  console.log('empty zone');
-                } else
-              {
-                zones[x_pos][z_pos].streets.forEach((element) => {
-                  switch (element.type) {
-                    case "bresenham":
-                      console.log("bresenham");
-                      y_start = element.geometry.start.y - offset
-                      x_start = element.geometry.start.x - offset
-                      y_end = element.geometry.end.y - offset
-                      x_end = element.geometry.end.x - offset
+      let x_start, y_start, x_control, y_control, x_end, y_end;
 
-                      console.log(x_start, y_start, x_end, y_end, x_pos, z_pos);
+      if ((x_pos != x_prev) || (z_pos != z_prev)) {
+        // console.log('x:' + pos.x + ' z:' + pos.z);
+        // console.log('city size:' + zones.length * zone_size);
+        // console.log('x_pos:' + x_pos + ' z_pos:' + z_pos)
+        // console.log('x_prev:' + x_prev + ' z_prev:' + z_prev)
+        try {
+          // console.log('zone ' + x_pos + ':' + z_pos + ' contents:' + zones[x_pos][z_pos].length)
+          const d = 1
+          for (var i=-d; i<d; i++) {
+            for (var j=-d; j<d; j++) {
+              if (!loaded[x_pos+i][z_pos+j]) {
+                zones[x_pos+i][z_pos+j].forEach((element) => {
 
-                      // element.geometry.start.y + offset
-                      lines = BABYLON.MeshBuilder.CreateLines("lines", {
-                        points: [
-                          new BABYLON.Vector3(x_start,
-                            0, y_start),
-                          new BABYLON.Vector3(x_end,
-                            0, y_end)
-                        ]
-                      }, scene);
-                      break;
-                    case "bezier":
-                      console.log("bezier");
-                        y_start = element.geometry.start.y - offset
-                        x_start = element.geometry.start.x - offset
-                        y_control = element.geometry.control.y - offset
-                        x_control = element.geometry.end.x - offset
-                        y_end = element.geometry.end.y - offset
-                        x_end = element.geometry.end.x - offset
-                        quadraticBezierVectors = BABYLON.Curve3.CreateQuadraticBezier(
-                                new BABYLON.Vector3(x_start, 0, y_start),
-                                new BABYLON.Vector3(x_control, 0, y_control),
-                                new BABYLON.Vector3(x_end, 0, y_end),
-                                250); // MAGIC
-                    default:
-                      console.log("unknown type" + element.type);
-                  }
+                  y_start = element.geometry.start.y - y_magic
+                  x_start = element.geometry.start.x - x_magic
+                  y_end = element.geometry.end.y - y_magic 
+                  x_end = element.geometry.end.x - x_magic
 
+                  // console.log(x_start,
+                  //             y_start, 
+                  //             x_end, 
+                  //             y_end, x_pos, z_pos);
+
+                  lines[x_pos+i][z_pos+j].push(BABYLON.MeshBuilder.CreateLines("lines", {
+                    points: [
+                      new BABYLON.Vector3(x_start,
+                                          0, 
+                                          y_start),
+                      new BABYLON.Vector3(x_end,
+                                          0,
+                                          y_end)
+                    ]
+                  }, scene));
                 })
-              }
-                // Check if anything is now out of range and should not be shown
-                console.log("unload!")
+                loaded[x_pos+i][z_pos+j] = true;
+                // console.log("unload!")
                 // thing.dispose();
+              }
             }
-            catch(err) {
-              console.log(x_pos, z_pos)
-              console.log([x_pos][z_pos])
-              console.log(err);
-            }
-            x_prev = x_pos;
-            z_prev = z_pos;
+          }
         }
+        catch(err) {
+          // console.log(x_pos, z_pos)
+          // console.log([x_pos][z_pos])
+          // console.log(err);
+        }
+        x_prev = x_pos;
+        z_prev = z_pos;
+      }
     });
 
     return scene;
@@ -193,7 +198,7 @@ var createScene = async function (zones) {
 const canvas = document.getElementById("renderCanvas"); // Get the canvas element
 const engine = new BABYLON.Engine(canvas, false, null, false); // Generate the BABYLON 3D engine
 
-fetch('assets/meshes/zones.json')
+fetch('assets/meshes/city_squares_100.json')
   .then(response => response.json())
   .then(data => {
     createScene(data).then(function (scene) {
