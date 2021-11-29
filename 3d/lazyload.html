@@ -3,13 +3,22 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-        <title>Lazy Load Meshes</title>
+        <title>Babylon.js sample code</title>
 
         <!-- Babylon.js -->
-        <script src="https://cdn.babylonjs.com/babylon.js"></script>
-        <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-        <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
-
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+        <script src="https://preview.babylonjs.com/ammo.js"></script>
+        <script src="https://preview.babylonjs.com/cannon.js"></script>
+        <script src="https://preview.babylonjs.com/Oimo.js"></script>
+        <script src="https://preview.babylonjs.com/earcut.min.js"></script>
+        <script src="https://preview.babylonjs.com/babylon.js"></script>
+        <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+        <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+        <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+        <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+        <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+        <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
 
         <style>
             html, body {
@@ -29,196 +38,157 @@
     </head>
 <body>
     <canvas id="renderCanvas"></canvas>
-
     <script>
+        var canvas = document.getElementById("renderCanvas");
 
-var createScene = async function (zones) {
-    var loaded = Array(420);
-    for (var i=0; i< loaded.length; i++) {
-      loaded[i] = Array(420)
-    }
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
+        var createScene = function (zones) {
 
-    var lines = Array(420);
-    for (var i=0; i< lines.length; i++) {
-      lines[i] = Array(420)
-      for (var j=0; j< lines[i].length; j++) {
-        lines[i][j] = []
-      }
-    }
-
-    // This creates a basic Babylon Scene object (non-mesh)
-    var scene = new BABYLON.Scene(engine);
-    scene.clearColor = new BABYLON.Color3(0, 0, 0);
-    // This creates and positions a free camera (non-mesh)
-    var camera = new BABYLON.UniversalCamera("camera1", new BABYLON.Vector3(-10, 2.3, -5), scene);
-    // This targets the camera to scene origin
-    camera.setTarget(BABYLON.Vector3.Zero());
-    camera.speed = 2
-    camera.maxZ = 100000;
-    // This attaches the camera to the canvas
-    camera.attachControl(true);
-
-    // // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
-    var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
-
-    var mat = new BABYLON.StandardMaterial("mat", scene);
-    var texture = new BABYLON.Texture("https://storage.googleapis.com/chrisyoung-io/assets/img/building_net_1_b.png", scene);
-    mat.diffuseTexture = texture;
-    mat.freeze();
-
-      // show axis
-  var showAxis = function(size) {
-    var makeTextPlane = function(text, color, size) {
-    var dynamicTexture = new BABYLON.DynamicTexture("DynamicTexture", 50, scene, true);
-    dynamicTexture.hasAlpha = true;
-    dynamicTexture.drawText(text, 5, 40, "bold 36px Arial", color , "transparent", true);
-    var plane = new BABYLON.Mesh.CreatePlane("TextPlane", size, scene, true);
-    plane.material = new BABYLON.StandardMaterial("TextPlaneMaterial", scene);
-    plane.material.backFaceCulling = false;
-    plane.material.specularColor = new BABYLON.Color3(0, 0, 0);
-    plane.material.diffuseTexture = dynamicTexture;
-    return plane;
-     };
-
-    var axisX = BABYLON.Mesh.CreateLines("axisX", [
-      new BABYLON.Vector3.Zero(), new BABYLON.Vector3(size, 0, 0), new BABYLON.Vector3(size * 0.95, 0.05 * size, 0),
-      new BABYLON.Vector3(size, 0, 0), new BABYLON.Vector3(size * 0.95, -0.05 * size, 0)
-      ], scene);
-    axisX.color = new BABYLON.Color3(1, 0, 0);
-    var xChar = makeTextPlane("X", "red", size / 10);
-    xChar.position = new BABYLON.Vector3(0.9 * size, -0.05 * size, 0);
-    var axisY = BABYLON.Mesh.CreateLines("axisY", [
-        new BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, size, 0), new BABYLON.Vector3( -0.05 * size, size * 0.95, 0),
-        new BABYLON.Vector3(0, size, 0), new BABYLON.Vector3( 0.05 * size, size * 0.95, 0)
-        ], scene);
-    axisY.color = new BABYLON.Color3(0, 1, 0);
-    var yChar = makeTextPlane("Y", "green", size / 10);
-    yChar.position = new BABYLON.Vector3(0, 0.9 * size, -0.05 * size);
-    var axisZ = BABYLON.Mesh.CreateLines("axisZ", [
-        new BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, 0, size), new BABYLON.Vector3( 0 , -0.05 * size, size * 0.95),
-        new BABYLON.Vector3(0, 0, size), new BABYLON.Vector3( 0, 0.05 * size, size * 0.95)
-        ], scene);
-    axisZ.color = new BABYLON.Color3(0, 0, 1);
-    var zChar = makeTextPlane("Z", "blue", size / 10);
-    zChar.position = new BABYLON.Vector3(0, 0.05 * size, 0.9 * size);
-  };
-
-  showAxis(5);
-
-    const box = BABYLON.MeshBuilder.CreateBox("box",
-    {height: 3, width: 1, depth: 1,
-    faceUV:[new BABYLON.Vector4(.25, 1, 0, .29), // reverse side
-            new BABYLON.Vector4(.0, .29, .25, 1), // side
-            new BABYLON.Vector4(.2, .2, .2, .2), // ???
-            new BABYLON.Vector4(1, 1, .275, .75),   // A side
-            new BABYLON.Vector4(0, 0, .2, .2),  // top
-            new BABYLON.Vector4(1, .2, 0, 0)]});
-    box.material = mat;
-    box.position = new BABYLON.Vector3(0, 0, 0);
-    scene.blockMaterialDirtyMechanism = true;
-
-    // const env = scene.createDefaultEnvironment();
-
-    var x_prev;
-    var z_prev;
-
-    scene.registerBeforeRender(function(scene) {
-
-      // Find out where we are
-      const pos = scene.activeCamera.position.clone();
-      // City gird is broken down into squares (zones)
-      const zone_size = 200;
-      const mid_point = 6;
-      const x_offset = 203;
-      const z_offset = 221;
-      // We want to know which zone (square on the city gird) we are
-      const x_pos = (Math.floor(pos.x / zone_size) + mid_point) + x_offset;
-      const z_pos = (Math.floor(pos.z / zone_size) + mid_point) + z_offset;
-
-      const x_magic = 52100;
-      const y_magic = 56600;
-
-      let x_start, y_start, x_control, y_control, x_end, y_end;
-
-      if ((x_pos != x_prev) || (z_pos != z_prev)) {
-        // console.log('x:' + pos.x + ' z:' + pos.z);
-        // console.log('city size:' + zones.length * zone_size);
-        // console.log('x_pos:' + x_pos + ' z_pos:' + z_pos)
-        // console.log('x_prev:' + x_prev + ' z_prev:' + z_prev)
-        try {
-          // console.log('zone ' + x_pos + ':' + z_pos + ' contents:' + zones[x_pos][z_pos].length)
-          const d = 1
-          for (var i=-d; i<d; i++) {
-            for (var j=-d; j<d; j++) {
-              if (!loaded[x_pos+i][z_pos+j]) {
-                zones[x_pos+i][z_pos+j].forEach((element) => {
-
-                  y_start = element.geometry.start.y - y_magic
-                  x_start = element.geometry.start.x - x_magic
-                  y_end = element.geometry.end.y - y_magic 
-                  x_end = element.geometry.end.x - x_magic
-
-                  // console.log(x_start,
-                  //             y_start, 
-                  //             x_end, 
-                  //             y_end, x_pos, z_pos);
-
-                  lines[x_pos+i][z_pos+j].push(BABYLON.MeshBuilder.CreateLines("lines", {
-                    points: [
-                      new BABYLON.Vector3(x_start,
-                                          0, 
-                                          y_start),
-                      new BABYLON.Vector3(x_end,
-                                          0,
-                                          y_end)
-                    ]
-                  }, scene));
-                })
-                loaded[x_pos+i][z_pos+j] = true;
-                // console.log("unload!")
-                // thing.dispose();
-              }
+            var loaded = Array(420);
+            for (var i=0; i< loaded.length; i++) {
+                loaded[i] = Array(420)
             }
-          }
-        }
-        catch(err) {
-          // console.log(x_pos, z_pos)
-          // console.log([x_pos][z_pos])
-          // console.log(err);
-        }
-        x_prev = x_pos;
-        z_prev = z_pos;
-      }
-    });
 
-    return scene;
+            var lines = Array(420);
+            for (var i=0; i< lines.length; i++) {
+                lines[i] = Array(420)
+                for (var j=0; j< lines[i].length; j++) {
+                    lines[i][j] = []
+                }
+            }
+            // This creates a basic Babylon Scene object (non-mesh)
+            var scene = new BABYLON.Scene(engine);
+            scene.clearColor = new BABYLON.Color3(0, 0, 0);
+            // This creates and positions a free camera (non-mesh)
+            var camera = new BABYLON.UniversalCamera("camera1", new BABYLON.Vector3(-10, 2.3, -5), scene);
+            // This targets the camera to scene origin
+            camera.setTarget(BABYLON.Vector3.Zero());
+            // This attaches the camera to the canvas
+            camera.attachControl(true);
 
-};
+            // This attaches the camera to the canvas
+            camera.attachControl(canvas, true);
+            camera.maxY = 100000;
+            camera.maxX = 100000;
+            camera.maxZ = 100000;
 
-const canvas = document.getElementById("renderCanvas"); // Get the canvas element
-const engine = new BABYLON.Engine(canvas, false, null, false); // Generate the BABYLON 3D engine
+            camera.speed = 20
+            // camera.inputs.attached.pointers.panningSensibility = 20;
 
-fetch('assets/meshes/city_squares_100.json')
+            var x_prev;
+            var z_prev;
+            var y_prev;
+
+            scene.registerBeforeRender(function(scene) {
+
+            // Find out where we are
+            const pos = scene.activeCamera.position.clone();
+            // City gird is broken down into squares (zones)
+            const zone_size = 200;
+            const mid_point = 6;
+            const x_offset = 203;
+            const z_offset = 221;
+            // We want to know which zone (square on the city gird) we are
+            const x_pos = (Math.floor(pos.x / zone_size) + mid_point) + x_offset;
+            const z_pos = (Math.floor(pos.z / zone_size) + mid_point) + z_offset;
+            const y_pos = (Math.floor(pos.y / zone_size));    
+
+            const x_magic = 52100;
+            const y_magic = 56600;
+
+            let x_start, y_start, x_control, y_control, x_end, y_end;
+            console.log(y_pos)
+
+            if ((x_pos != x_prev) || (z_pos != z_prev) || (y_pos != y_prev)) {
+                // console.log('x:' + pos.x + ' z:' + pos.z);
+                // console.log('city size:' + zones.length * zone_size);
+                // console.log('x_pos:' + x_pos + ' z_pos:' + z_pos)
+                // console.log('x_prev:' + x_prev + ' z_prev:' + z_prev)
+                try {
+                // console.log('zone ' + x_pos + ':' + z_pos + ' contents:' + zones[x_pos][z_pos].length)
+                const d = 1 + y_pos;
+                const e = 1 + y_pos;
+                for (var i=-d; i<d; i++) {
+                    for (var j=-e; j<e; j++) {
+                    if (!loaded[x_pos+i][z_pos+j]) {
+                        zones[x_pos+i][z_pos+j].forEach((element) => {
+
+                        y_start = element.geometry.start.y - y_magic
+                        x_start = element.geometry.start.x - x_magic
+                        y_end = element.geometry.end.y - y_magic 
+                        x_end = element.geometry.end.x - x_magic
+
+                        // console.log(x_start,
+                        //             y_start, 
+                        //             x_end, 
+                        //             y_end, x_pos, z_pos);
+
+                        lines[x_pos+i][z_pos+j].push(BABYLON.MeshBuilder.CreateLines("lines", {
+                            points: [
+                            new BABYLON.Vector3(x_start,
+                                                0, 
+                                                y_start),
+                            new BABYLON.Vector3(x_end,
+                                                0,
+                                                y_end)
+                            ]
+                        }, scene));
+                        lines[x_pos+i][z_pos+j][lines[x_pos+i][z_pos+j].length-1].color = new BABYLON.Color3(0, 1, 0);
+                        })
+                        loaded[x_pos+i][z_pos+j] = true;
+                        // console.log("unload!")
+                        // thing.dispose();
+                    }
+                    }
+                }
+                }
+                catch(err) {
+                // console.log(x_pos, z_pos)
+                // console.log([x_pos][z_pos])
+                // console.log(err);
+                }
+                x_prev = x_pos;
+                z_prev = z_pos;
+                y_prev = y_pos;
+            }
+            });           
+
+            return scene;
+        
+        };
+        window.initFunction = async function(data) {
+                    
+            var asyncEngineCreation = async function() {
+                try {
+                return createDefaultEngine();
+                } catch(e) {
+                console.log("the available createEngine function failed. Creating the default engine instead");
+                return createDefaultEngine();
+                }
+            }
+
+            window.engine = await asyncEngineCreation();
+            if (!engine) throw 'engine should not be null.';
+            window.scene = createScene(data);
+        };
+
+        fetch('assets/meshes/city_squares_100.json')
   .then(response => response.json())
-  .then(data => {
-    createScene(data).then(function (scene) {
-
-      // Register a render loop to repeatedly render the scene
-      engine.runRenderLoop(function () {
-        scene.render();
-      });
-      // Watch for browser/canvas resize events
-      window.addEventListener("resize", function () {
-        engine.resize();
-
-
-      });
-
-    }) //Call the createScene function
-  });
+  .then(data => {initFunction(data).then(() => {sceneToRender = scene        
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        })});
+  
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
     </script>
-
 </body>
 </html>
-
-    
