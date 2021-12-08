@@ -100,7 +100,6 @@
             const y_magic = 56600;
 
             let x_start, y_start, x_control, y_control, x_end, y_end;
-            console.log(y_pos)
 
             if ((x_pos != x_prev) || (z_pos != z_prev) || (y_pos != y_prev)) {
                 // console.log('x:' + pos.x + ' z:' + pos.z);
@@ -109,39 +108,46 @@
                 // console.log('x_prev:' + x_prev + ' z_prev:' + z_prev)
                 try {
                 // console.log('zone ' + x_pos + ':' + z_pos + ' contents:' + zones[x_pos][z_pos].length)
-                const d = 1 + y_pos;
-                const e = 1 + y_pos;
+                const cursor = 5;
+                const d = (cursor * y_pos) + 1;
+                const e = (cursor * y_pos) + 1;
                 for (var i=-d; i<d; i++) {
                     for (var j=-e; j<e; j++) {
                     if (!loaded[x_pos+i][z_pos+j]) {
+                        const distance = Math.max(Math.abs(i),Math.abs(j));
+                        console.log("distance:" + distance);
                         zones[x_pos+i][z_pos+j].forEach((element) => {
+                            const distance_limit = (distance + 1) * 1000;
+                            if (element.lot_length > distance_limit) {
+                                console.log(distance, element.lot_length)
+                                y_start = element.geometry.start.y - y_magic
+                                x_start = element.geometry.start.x - x_magic
+                                y_end = element.geometry.end.y - y_magic 
+                                x_end = element.geometry.end.x - x_magic
 
-                        y_start = element.geometry.start.y - y_magic
-                        x_start = element.geometry.start.x - x_magic
-                        y_end = element.geometry.end.y - y_magic 
-                        x_end = element.geometry.end.x - x_magic
+                                // console.log(x_start,
+                                //             y_start, 
+                                //             x_end, 
+                                //             y_end, x_pos, z_pos);
 
-                        // console.log(x_start,
-                        //             y_start, 
-                        //             x_end, 
-                        //             y_end, x_pos, z_pos);
-
-                        lines[x_pos+i][z_pos+j].push(BABYLON.MeshBuilder.CreateLines("lines", {
-                            points: [
-                            new BABYLON.Vector3(x_start,
-                                                0, 
-                                                y_start),
-                            new BABYLON.Vector3(x_end,
-                                                0,
-                                                y_end)
-                            ]
-                        }, scene));
-                        lines[x_pos+i][z_pos+j][lines[x_pos+i][z_pos+j].length-1].color = new BABYLON.Color3(0, 1, 0);
+                                lines[x_pos+i][z_pos+j].push(BABYLON.MeshBuilder.CreateLines("lines", {
+                                    points: [
+                                    new BABYLON.Vector3(x_start,
+                                                        0, 
+                                                        y_start),
+                                    new BABYLON.Vector3(x_end,
+                                                        0,
+                                                        y_end)
+                                    ]
+                                }, scene));
+                                lines[x_pos+i][z_pos+j][lines[x_pos+i][z_pos+j].length-1].color = new BABYLON.Color3(0, 1, 0);
+                            }    
                         })
                         loaded[x_pos+i][z_pos+j] = true;
                         // console.log("unload!")
                         // thing.dispose();
-                    }
+                            
+                        }
                     }
                 }
                 }
