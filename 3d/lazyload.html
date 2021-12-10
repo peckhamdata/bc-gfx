@@ -47,16 +47,11 @@
         var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
         var createScene = function (zones) {
 
-            var loaded = Array(420);
-            for (var i=0; i< loaded.length; i++) {
-                loaded[i] = Array(420)
-            }
-
             var lines = Array(420);
             for (var i=0; i< lines.length; i++) {
                 lines[i] = Array(420)
                 for (var j=0; j< lines[i].length; j++) {
-                    lines[i][j] = []
+                    lines[i][j] = {}
                 }
             }
             // This creates a basic Babylon Scene object (non-mesh)
@@ -109,45 +104,51 @@
                 try {
                 // console.log('zone ' + x_pos + ':' + z_pos + ' contents:' + zones[x_pos][z_pos].length)
                 const cursor = 5;
-                const d = (cursor * y_pos) + 1;
-                const e = (cursor * y_pos) + 1;
+                const scale = 5;
+                const d = (cursor * (y_pos * scale)) + 1;
+                const e = (cursor * (y_pos * scale)) + 1;
                 for (var i=-d; i<d; i++) {
                     for (var j=-e; j<e; j++) {
-                    if (!loaded[x_pos+i][z_pos+j]) {
                         const distance = Math.max(Math.abs(i),Math.abs(j));
-                        console.log("distance:" + distance);
+                        // console.log("distance:" + distance);
                         zones[x_pos+i][z_pos+j].forEach((element) => {
                             const distance_limit = (distance + 1) * 1000;
-                            if (element.lot_length > distance_limit) {
-                                console.log(distance, element.lot_length)
-                                y_start = element.geometry.start.y - y_magic
-                                x_start = element.geometry.start.x - x_magic
-                                y_end = element.geometry.end.y - y_magic 
-                                x_end = element.geometry.end.x - x_magic
+                            const min_distance_limit = (distance - 2) * 10;
+                            if ((element.lot_length > distance_limit) || (element.lot_length > 30000)) {
+                                if (!(element.id in lines[x_pos+i][z_pos+j])) {
+                                    // Element should be displayed
+                                    // console.log(distance, element.lot_length)
+                                    y_start = element.geometry.start.y - y_magic
+                                    x_start = element.geometry.start.x - x_magic
+                                    y_end = element.geometry.end.y - y_magic 
+                                    x_end = element.geometry.end.x - x_magic
 
-                                // console.log(x_start,
-                                //             y_start, 
-                                //             x_end, 
-                                //             y_end, x_pos, z_pos);
+                                    // console.log(x_start,
+                                    //             y_start, 
+                                    //             x_end, 
+                                    //             y_end, x_pos, z_pos);
 
-                                lines[x_pos+i][z_pos+j].push(BABYLON.MeshBuilder.CreateLines("lines", {
-                                    points: [
-                                    new BABYLON.Vector3(x_start,
-                                                        0, 
-                                                        y_start),
-                                    new BABYLON.Vector3(x_end,
-                                                        0,
-                                                        y_end)
-                                    ]
-                                }, scene));
-                                lines[x_pos+i][z_pos+j][lines[x_pos+i][z_pos+j].length-1].color = new BABYLON.Color3(0, 1, 0);
+                                    lines[x_pos+i][z_pos+j][element.id] = BABYLON.MeshBuilder.CreateLines("lines", {
+                                        points: [
+                                        new BABYLON.Vector3(x_start,
+                                                            0, 
+                                                            y_start),
+                                        new BABYLON.Vector3(x_end,
+                                                            0,
+                                                            y_end)
+                                        ]
+                                    }, scene);
+                                    lines[x_pos+i][z_pos+j][element.id].color = new BABYLON.Color3(0, 1, 0);
+                                }
+                            } else if (element.lot_length < min_distance_limit)  {
+                              // Element should be unloaded if it is loaded
+                              if(element.id in lines[x_pos+i][z_pos+j]) {
+                                lines[x_pos+i][z_pos+j][element.id].dispose();
+                                delete lines[x_pos+i][z_pos+j][element.id];
+                              } 
                             }    
+                    
                         })
-                        loaded[x_pos+i][z_pos+j] = true;
-                        // console.log("unload!")
-                        // thing.dispose();
-                            
-                        }
                     }
                 }
                 }
@@ -156,6 +157,7 @@
                 // console.log([x_pos][z_pos])
                 // console.log(err);
                 }
+
                 x_prev = x_pos;
                 z_prev = z_pos;
                 y_prev = y_pos;
