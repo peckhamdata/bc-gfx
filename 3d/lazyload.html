@@ -41,6 +41,77 @@
     <script>
         var canvas = document.getElementById("renderCanvas");
 
+        function hexToRgb(hex) {
+            var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        const colours = [
+            "#FFFFFF",
+            "#C0C0C0",
+            "#808080",
+            "#FF0000",
+            "#800000",
+            "#FFFF00",
+            "#808000",
+            "#00FF00",
+            "#008000",
+            "#00FFFF",
+            "#008080",
+            "#0000FF",
+            "#000080",
+            "#FF00FF",
+            "#800080",
+            "#FFFFFF",
+            "#C0C0C0",
+            "#808080",
+            "#FF0000",
+            "#800000",
+            "#FFFF00",
+            "#808000",
+            "#00FF00",
+            "#008000",
+            "#00FFFF",
+            "#008080",
+            "#0000FF",
+            "#000080",
+            "#FF00FF",
+            "#800080",
+            "#C0C0C0",
+            "#808080",
+            "#FF0000",
+            "#800000",
+            "#FFFF00",
+            "#808000",
+            "#00FF00",
+            "#008000",
+            "#00FFFF",
+            "#008080",
+            "#0000FF",
+            "#000080",
+            "#FF00FF",
+            "#800080",
+            "#FFFFFF",
+            "#C0C0C0",
+            "#808080",
+            "#FF0000",
+            "#800000",
+            "#FFFF00",
+            "#808000",
+            "#00FF00",
+            "#008000",
+            "#00FFFF",
+            "#008080",
+            "#0000FF",
+            "#000080",
+            "#FF00FF",
+            "#800080"
+        ]
+
         var engine = null;
         var scene = null;
         var sceneToRender = null;
@@ -58,7 +129,7 @@
             var scene = new BABYLON.Scene(engine);
             scene.clearColor = new BABYLON.Color3(0, 0, 0);
             // This creates and positions a free camera (non-mesh)
-            var camera = new BABYLON.UniversalCamera("camera1", new BABYLON.Vector3(-10, 2.3, -5), scene);
+            var camera = new BABYLON.UniversalCamera("camera1", new BABYLON.Vector3(0, 500, 0), scene);
             // This targets the camera to scene origin
             camera.setTarget(BABYLON.Vector3.Zero());
             // This attaches the camera to the canvas
@@ -99,7 +170,7 @@
             if ((x_pos != x_prev) || (z_pos != z_prev) || (y_pos != y_prev)) {
                 // console.log('x:' + pos.x + ' z:' + pos.z);
                 // console.log('city size:' + zones.length * zone_size);
-                // console.log('x_pos:' + x_pos + ' z_pos:' + z_pos)
+                console.log('x_pos:' + x_pos + ' z_pos:' + z_pos + ' y_pos:' + y_pos)
                 // console.log('x_prev:' + x_prev + ' z_prev:' + z_prev)
                 try {
                 // console.log('zone ' + x_pos + ':' + z_pos + ' contents:' + zones[x_pos][z_pos].length)
@@ -109,11 +180,11 @@
                 const e = (cursor * (y_pos * scale)) + 1;
                 for (var i=-d; i<d; i++) {
                     for (var j=-e; j<e; j++) {
-                        const distance = Math.max(Math.abs(i),Math.abs(j));
+                        var distance = Math.max(Math.abs(i),Math.abs(j));
                         // console.log("distance:" + distance);
                         zones[x_pos+i][z_pos+j].forEach((element) => {
-                            const distance_limit = (distance + 1) * 1000;
-                            const min_distance_limit = (distance - 2) * 10;
+                            const distance_limit = distance * 100;
+                            const min_distance_limit = distance * 100;
                             if ((element.lot_length > distance_limit) || (element.lot_length > 30000)) {
                                 if (!(element.id in lines[x_pos+i][z_pos+j])) {
                                     // Element should be displayed
@@ -138,12 +209,14 @@
                                                             y_end)
                                         ]
                                     }, scene);
-                                    lines[x_pos+i][z_pos+j][element.id].color = new BABYLON.Color3(0, 1, 0);
+                                    const rgb = hexToRgb(colours[distance])
+                                    lines[x_pos+i][z_pos+j][element.id].color = new BABYLON.Color3(rgb.r, rgb.g, rgb.b);
                                 }
                             } else if (element.lot_length < min_distance_limit)  {
                               // Element should be unloaded if it is loaded
                               if(element.id in lines[x_pos+i][z_pos+j]) {
                                 lines[x_pos+i][z_pos+j][element.id].dispose();
+                                // lines[x_pos+i][z_pos+j][element.id].color = new BABYLON.Color3.Random();
                                 delete lines[x_pos+i][z_pos+j][element.id];
                               } 
                             }    
