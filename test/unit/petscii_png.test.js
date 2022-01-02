@@ -8,7 +8,7 @@ describe('PETSCII png maker', () => {
   // Given a PETSCII code 
   const code = 18 
   // And a 'Sprite Sheet' of PETSCII graphics
-  const sprite_sheet_src = 'commodore-8-bit/petscii/1.PNG'
+  const sprite_sheet_src = 'skins/commodore-8-bit/petscii/1.PNG'
 
   var p_png = new PetsciiPng(sprite_sheet_src);
   // When we ask for that code
@@ -36,7 +36,7 @@ describe('PETSCII png maker', () => {
 
    it('Can turn an array of codes into a jimp image', () => {
 
-    const sprite_sheet_src = 'commodore-8-bit/petscii/1.png'
+    const sprite_sheet_src = 'skins/commodore-8-bit/petscii/1.png'
     const codes = Array.from(Array(255).keys());
     // const codes = Array(3).fill(120);
     var p_png = new PetsciiPng(sprite_sheet_src);

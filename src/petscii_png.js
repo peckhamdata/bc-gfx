@@ -86,7 +86,7 @@ module.exports = class PetsciiPng {
               source_x = (remainder * char_width);
             }
             var source_y = quotient * char_height;
-            console.log(code, quotient, remainder, source_y, source_x)
+            // console.log(code, quotient, remainder, source_y, source_x)
             base_image.blit(sprite_sheet,
                            (index % width) * visible_width,
                            (Math.floor(index/width )) * visible_height,
