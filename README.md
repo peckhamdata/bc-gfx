@@ -19,6 +19,10 @@ Sprite Sheets are in [`skins/commodore-8-bit/petscii`](skins/commodore-8-bit/pet
 
 `npm test`
 
+# 3D
+
+The [3d](3d) folder contains some experiments to texture map these graphics into 3D using [babylon.js](https://www.babylonjs.com/)
+
 # Copyright
 
 (C) Copyright 2023 Peckham Data Centre. All Rights Reserved.
