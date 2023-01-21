@@ -19,5 +19,6 @@ Sprite Sheets are in [`skins/commodore-8-bit/petscii`](skins/commodore-8-bit/pet
 
 `npm test`
 
+# Copyright
 
-
+(C) Copyright 2023 Peckham Data Centre. All Rights Reserved.
